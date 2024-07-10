@@ -1,22 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func createUser(c echo.Context) error {
-	firstName := c.FormValue("firstName")
-	lastName := c.FormValue("lastName")
-	email := c.FormValue("email")
-	company := c.FormValue("company")
-	phone := c.FormValue("phone")
-	return c.String(http.StatusOK, "firstName: "+firstName+", lastName: "+lastName+", email: "+email+", company: "+company+", phone: "+phone)
-}
-
+// User represents a user in the system.
 type User struct {
 	ID        int    `json:"_id"`
 	FirstName string `json:"firstName"`
@@ -26,6 +18,12 @@ type User struct {
 	Phone     string `json:"phone"`
 }
 
+// swagger:route GET /v1/user users getUsers
+// Get a list of users.
+// responses:
+//   200: usersResponse
+
+// getUsers handles the GET request for retrieving a list of users.
 func getUsers(c echo.Context) error {
 	users := []User{
 		{ID: 1, FirstName: "John", LastName: "Doe", Email: "john@example.com", Company: "ABC Inc.", Phone: "1234567890"},
@@ -36,6 +34,30 @@ func getUsers(c echo.Context) error {
 	return c.JSON(http.StatusOK, users)
 }
 
+// swagger:route POST /v1/user users createUser
+// Create a new user.
+// responses:
+//   200: userResponse
+
+// createUser handles the POST request for creating a new user.
+func createUser(c echo.Context) error {
+	firstName := c.FormValue("firstName")
+	lastName := c.FormValue("lastName")
+	email := c.FormValue("email")
+	company := c.FormValue("company")
+	phone := c.FormValue("phone")
+
+	fmt.Println(http.StatusOK, "firstName: "+firstName+", lastName: "+lastName+", email: "+email+", company: "+company+", phone: "+phone)
+
+	return c.JSON(http.StatusOK, []User{})
+}
+
+// swagger:route PUT /v1/user/{id} users updateUser
+// Update an existing user.
+// responses:
+//   200: userResponse
+
+// updateUser handles the PUT request for updating an existing user.
 func updateUser(c echo.Context) error {
 	id := c.Param("id")
 	firstName := c.FormValue("firstName")
@@ -43,12 +65,21 @@ func updateUser(c echo.Context) error {
 	email := c.FormValue("email")
 	company := c.FormValue("company")
 	phone := c.FormValue("phone")
-	return c.String(http.StatusOK, "id: "+id+", firstName: "+firstName+", lastName: "+lastName+", email: "+email+", company: "+company+", phone: "+phone)
+
+	fmt.Println(http.StatusOK, "id: "+id+", firstName: "+firstName+", lastName: "+lastName+", email: "+email+", company: "+company+", phone: "+phone)
+
+	return c.JSON(http.StatusOK, []User{})
 }
 
+// swagger:route DELETE /v1/user/{id} users deleteUser
+// Delete a user.
+// responses:
+//   200: deleteUserResponse
+
+// deleteUser handles the DELETE request for deleting a user.
 func deleteUser(c echo.Context) error {
 	id := c.Param("id")
-	return c.String(http.StatusOK, "Deletes user in database with id="+id)
+	return c.JSON(http.StatusOK, "Deleted user in database with id="+id)
 }
 
 func main() {
