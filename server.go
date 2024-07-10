@@ -25,6 +25,8 @@ type User struct {
 
 // getUsers handles the GET request for retrieving a list of users.
 func getUsers(c echo.Context) error {
+	// users := sq.Select("*").From("users").Join("emails USING (email_id)")
+
 	users := []User{
 		{ID: 1, FirstName: "John", LastName: "Doe", Email: "john@example.com", Company: "ABC Inc.", Phone: "1234567890"},
 		{ID: 2, FirstName: "Jane", LastName: "Smith", Email: "jane@example.com", Company: "XYZ Corp.", Phone: "9876543210"},
