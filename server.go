@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func createUser(c echo.Context) error {
@@ -51,13 +53,17 @@ func deleteUser(c echo.Context) error {
 
 func main() {
 	app := echo.New() // Create a new echo instance
-	port := ":1323"   // Port number
+
+	app.Use(middleware.CORS()) // Enable CORS
+
+	port := ":1323"  // Port number
+	version := "/v1" // API version
 
 	// Routes
-	app.POST("/user", createUser)
-	app.GET("/user", getUsers)
-	app.PUT("/user/:id", updateUser)
-	app.DELETE("/user/:id", deleteUser)
+	app.POST(version+"/user", createUser)
+	app.GET(version+"/user", getUsers)
+	app.PUT(version+"/user/:id", updateUser)
+	app.DELETE(version+"/user/:id", deleteUser)
 
 	// Start server
 	app.Logger.Fatal(app.Start(port))
