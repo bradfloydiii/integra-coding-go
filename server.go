@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -117,7 +116,6 @@ func createUser(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println(sql, args)
 	_, err = db.Exec(sql, args...)
 	if err != nil {
 		log.Fatal(err)
@@ -157,7 +155,6 @@ func updateUser(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println(sql, args)
 	_, err = db.Exec(sql, args...)
 	if err != nil {
 		log.Fatal(err)
@@ -184,7 +181,6 @@ func deleteUser(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println(sql, args)
 	_, err = db.Exec(sql, args...)
 	if err != nil {
 		log.Fatal(err)
