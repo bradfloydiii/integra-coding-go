@@ -11,5 +11,5 @@ CREATE TABLE users_test(
 
 INSERT INTO users_test(firstName, lastName, email, company, phone)
 VALUES
-('Brad', 'Floyd', 'brad@example.com', 'ABC.Inc', '1234567890'),
+('Jane', 'Doe', 'jane@example.com', 'ABC.Inc', '1234567890'),
 ('John', 'Doe', 'john@example.com', 'XYZ.Corp', '9876543210');
