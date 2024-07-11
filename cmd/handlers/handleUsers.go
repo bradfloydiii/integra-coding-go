@@ -67,6 +67,7 @@ func CreateUser(c echo.Context) error {
 
 	dbName := os.Getenv("DB_NAME")
 
+	// need to check if user already exists
 	sql, args, err := psql.Insert("").
 		Into(dbName).
 		Columns("firstname", "lastname", "email", "company", "phone").
