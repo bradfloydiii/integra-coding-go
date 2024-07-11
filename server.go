@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
@@ -22,6 +23,7 @@ type User struct {
 }
 
 var db *sql.DB
+var psql = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 func main() {
 	app := echo.New()          // Create a new echo instance
@@ -37,12 +39,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// test the connection to the database
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	} else {
-		log.Println("database connected successfully")
-	}
+	testConnection()
 
 	app.GET(version+"/user", getUsers)
 	app.POST(version+"/user", createUser)
@@ -50,6 +47,15 @@ func main() {
 	app.DELETE(version+"/user/:id", deleteUser)
 
 	app.Logger.Fatal(app.Start(port))
+}
+
+func testConnection() {
+	// test the connection to the database
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	} else {
+		log.Println("database connected successfully")
+	}
 }
 
 // swagger:route GET /v1/user users getUsers
@@ -60,7 +66,10 @@ func main() {
 func getUsers(c echo.Context) error {
 	c.Response().Header().Set("Content-Type", "application/json")
 
-	rows, err := db.Query("SELECT * FROM users")
+	query := sq.Select("*").From("users")
+	sql, _, _ := query.ToSql()
+
+	rows, err := db.Query(sql)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -91,22 +100,27 @@ func getUsers(c echo.Context) error {
 //
 // createUser handles the POST request for creating a new user.
 func createUser(c echo.Context) error {
+	c.Response().Header().Set("Content-Type", "application/json")
 
+	// obviously need to vet these inputs
 	firstname := c.FormValue("firstname")
 	lastname := c.FormValue("lastname")
 	email := c.FormValue("email")
 	company := c.FormValue("company")
 	phone := c.FormValue("phone")
 
-	fmt.Println("firstname: " + firstname + ", lastname: " + lastname + ", email: " + email + ", company: " + company + ", phone: " + phone)
+	sql, args, err := psql.Insert("").
+		Into("users").
+		Columns("firstname", "lastname", "email", "company", "phone").
+		Values(firstname, lastname, email, company, phone).ToSql()
 
-	stmt, err := db.Prepare("INSERT INTO users (firstname, lastname, email, company, phone) VALUES ($1, $2, $3, $4, $5)")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	defer stmt.Close()
 
-	if _, err := stmt.Exec(firstname, lastname, email, company, phone); err != nil {
+	fmt.Println(sql, args)
+	_, err = db.Exec(sql, args...)
+	if err != nil {
 		log.Fatal(err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "User NOT created successfully"})
 	}
@@ -121,6 +135,9 @@ func createUser(c echo.Context) error {
 
 // updateUser handles the PUT request for updating an existing user.
 func updateUser(c echo.Context) error {
+	c.Response().Header().Set("Content-Type", "application/json")
+
+	// obviously need to vet these inputs
 	id := c.Param("id")
 	firstname := c.FormValue("firstname")
 	lastname := c.FormValue("lastname")
@@ -151,9 +168,12 @@ func updateUser(c echo.Context) error {
 
 // deleteUser handles the DELETE request for deleting a user.
 func deleteUser(c echo.Context) error {
+	c.Response().Header().Set("Content-Type", "application/json")
+
+	// obviously need to vet these input
 	id := c.Param("id")
 
-	fmt.Println("id: " + id)
+	// fmt.Println("id: " + id)
 
 	stmt, err := db.Prepare("DELETE FROM users WHERE id=$1")
 	if err != nil {
