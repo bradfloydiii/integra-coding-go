@@ -25,6 +25,15 @@ type User struct {
 var db *sql.DB
 var psql = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
+func testConnection() {
+	// test the connection to the database
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	} else {
+		log.Println("...database connected successfully...")
+	}
+}
+
 func main() {
 	app := echo.New()          // Create a new echo instance
 	app.Use(middleware.CORS()) // Enable CORS
@@ -32,7 +41,6 @@ func main() {
 	port := ":1323"  // Port number
 	version := "/v1" // API version
 
-	// connect to the postgres database
 	var err error
 	db, err = sql.Open("postgres", "user=postgres password=password dbname=users port=5432 sslmode=disable") // would separate this into a config file
 	if err != nil {
@@ -47,15 +55,6 @@ func main() {
 	app.DELETE(version+"/user/:id", deleteUser)
 
 	app.Logger.Fatal(app.Start(port))
-}
-
-func testConnection() {
-	// test the connection to the database
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	} else {
-		log.Println("database connected successfully")
-	}
 }
 
 // swagger:route GET /v1/user users getUsers
@@ -145,15 +144,22 @@ func updateUser(c echo.Context) error {
 	company := c.FormValue("company")
 	phone := c.FormValue("phone")
 
-	fmt.Println("id: " + id + ", firstname: " + firstname + ", lastname: " + lastname + ", email: " + email + ", company: " + company + ", phone: " + phone)
+	sql, args, err := psql.Update("users").
+		Set("firstname", firstname).
+		Set("lastname", lastname).
+		Set("email", email).
+		Set("company", company).
+		Set("phone", phone).
+		Where(sq.Eq{"id": id}).
+		ToSql()
 
-	stmt, err := db.Prepare("UPDATE users SET firstname=$1, lastname=$2, email=$3, company=$4, phone=$5 WHERE id=$6")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	defer stmt.Close()
 
-	if _, err := stmt.Exec(firstname, lastname, email, company, phone, id); err != nil {
+	fmt.Println(sql, args)
+	_, err = db.Exec(sql, args...)
+	if err != nil {
 		log.Fatal(err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "User NOT updated successfully"})
 	}
@@ -170,16 +176,17 @@ func updateUser(c echo.Context) error {
 func deleteUser(c echo.Context) error {
 	c.Response().Header().Set("Content-Type", "application/json")
 
-	// obviously need to vet these input
+	// obviously need to vet this input
 	id := c.Param("id")
 
-	// fmt.Println("id: " + id)
-
-	stmt, err := db.Prepare("DELETE FROM users WHERE id=$1")
+	sql, args, err := psql.Delete("users").Where(sq.Eq{"id": id}).ToSql()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	if _, err := stmt.Exec(id); err != nil {
+
+	fmt.Println(sql, args)
+	_, err = db.Exec(sql, args...)
+	if err != nil {
 		log.Fatal(err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "User NOT deleted successfully"})
 	}
