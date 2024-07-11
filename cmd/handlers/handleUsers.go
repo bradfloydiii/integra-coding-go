@@ -97,6 +97,11 @@ func UpdateUser(c echo.Context) error {
 	// obviously need to vet these inputs
 	id := c.Param("id")
 
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
 	firstname := c.FormValue("firstname")
 	lastname := c.FormValue("lastname")
 	email := c.FormValue("email")
@@ -111,7 +116,7 @@ func UpdateUser(c echo.Context) error {
 		Set("email", email).
 		Set("company", company).
 		Set("phone", phone).
-		Where(sq.Eq{"id": id}).
+		Where(sq.Eq{"id": idInt}).
 		ToSql()
 
 	if err != nil {
