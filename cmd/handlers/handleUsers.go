@@ -66,9 +66,14 @@ func CreateUser(c echo.Context) error {
 
 	dbName := os.Getenv("DB_NAME")
 
-	// need to check if user already exists
 	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM "+dbName+" WHERE email = $1", email).Scan(&count)
+	query := psql.Select("COUNT(*)").From(dbName).Where(sq.Eq{"email": email})
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	err = db.QueryRow(sql, args...).Scan(&count)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
@@ -77,7 +82,7 @@ func CreateUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": "User already exists."})
 	}
 
-	sql, args, err := psql.Insert("").
+	sql, args, err = psql.Insert("").
 		Into(dbName).
 		Columns("firstname", "lastname", "email", "company", "phone").
 		Values(firstname, lastname, email, company, phone).ToSql()
