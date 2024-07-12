@@ -79,7 +79,7 @@ func CreateUser(c echo.Context) error {
 	}
 
 	if count > 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "User already exists. Please update the user email."})
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "User already exists with associated email."})
 	}
 
 	sql, args, err = psql.Insert("").
