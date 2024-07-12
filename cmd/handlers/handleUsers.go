@@ -21,13 +21,14 @@ var psql = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 //	200: usersResponse
 func GetUsers(c echo.Context) error {
 	db := storage.GetDB()
+	dbName := os.Getenv("DB_NAME")
 
-	query := sq.Select("*").From("users")
+	query := sq.Select("*").From(dbName)
 	sql, _, _ := query.ToSql()
 
 	rows, err := db.Query(sql)
 	if err != nil {
-		log.Fatal(err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	defer rows.Close()
 
@@ -57,14 +58,13 @@ func GetUsers(c echo.Context) error {
 // createUser handles the POST request for creating a new user.
 func CreateUser(c echo.Context) error {
 	db := storage.GetDB()
+	dbName := os.Getenv("DB_NAME")
 
 	firstname := c.FormValue("firstname")
 	lastname := c.FormValue("lastname")
 	email := c.FormValue("email")
 	company := c.FormValue("company")
 	phone := c.FormValue("phone")
-
-	dbName := os.Getenv("DB_NAME")
 
 	var count int
 	query := psql.Select("COUNT(*)").From(dbName).Where(sq.Eq{"email": email})
@@ -107,8 +107,8 @@ func CreateUser(c echo.Context) error {
 // updateUser handles the PUT request for updating an existing user.
 func UpdateUser(c echo.Context) error {
 	db := storage.GetDB()
+	dbName := os.Getenv("DB_NAME")
 
-	// obviously need to vet these inputs
 	id := c.Param("id")
 
 	idInt, err := strconv.Atoi(id)
@@ -121,8 +121,6 @@ func UpdateUser(c echo.Context) error {
 	email := c.FormValue("email")
 	company := c.FormValue("company")
 	phone := c.FormValue("phone")
-
-	dbName := os.Getenv("DB_NAME")
 
 	sql, args, err := psql.Update(dbName).
 		Set("firstname", firstname).
@@ -153,6 +151,7 @@ func UpdateUser(c echo.Context) error {
 // deleteUser handles the DELETE request for deleting a user.
 func DeleteUser(c echo.Context) error {
 	db := storage.GetDB()
+	dbName := os.Getenv("DB_NAME")
 
 	id := c.Param("id")
 
@@ -161,7 +160,7 @@ func DeleteUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	sql, args, err := psql.Delete("users").Where(sq.Eq{"id": idInt}).ToSql()
+	sql, args, err := psql.Delete(dbName).Where(sq.Eq{"id": idInt}).ToSql()
 	if err != nil {
 		return err
 	}
