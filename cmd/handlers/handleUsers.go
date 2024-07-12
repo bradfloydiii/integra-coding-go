@@ -58,7 +58,6 @@ func GetUsers(c echo.Context) error {
 func CreateUser(c echo.Context) error {
 	db := storage.GetDB()
 
-	// obviously need to vet these inputs
 	firstname := c.FormValue("firstname")
 	lastname := c.FormValue("lastname")
 	email := c.FormValue("email")
@@ -68,6 +67,16 @@ func CreateUser(c echo.Context) error {
 	dbName := os.Getenv("DB_NAME")
 
 	// need to check if user already exists
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM "+dbName+" WHERE email = $1", email).Scan(&count)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	if count > 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "User already exists."})
+	}
+
 	sql, args, err := psql.Insert("").
 		Into(dbName).
 		Columns("firstname", "lastname", "email", "company", "phone").
